@@ -11,7 +11,8 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: new ThemeData(
         primarySwatch: Colors.blue,
-        accentColor: Colors.yellow.shade700
+        accentColor: Colors.yellow.shade700,
+        textTheme: TextTheme(display1: TextStyle(fontSize: 18.0))
       ),
       home: HomePage()
     );
@@ -26,18 +27,55 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<NoteModel> notes = [];
 
+  _buildDefaultContent(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          SizedBox(
+            width: 100.0,
+            height: 100.0,
+            child: Image.asset('assets/images/note-icon.png')
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text('Empty notebook', style: Theme.of(context).textTheme.display1),
+          )
+        ],
+      )
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
         title: Text('flutter notebook'),
       ),
-      body: ListView(
-        children: notes.map((note) => NoteBookItem(
-          icon: Icon(note.iconData),
-          text: note.text,
-          timestamp: note.timestamp
-        )).toList(),
+      body: notes.length == 0 ? _buildDefaultContent(context) : ListView(
+        children: notes.map((note) {
+          return Dismissible(
+            key: ObjectKey(note),
+            direction: DismissDirection.startToEnd,
+            onDismissed: (DismissDirection dir) {
+              setState(() {
+                notes.remove(note);
+              });
+            },
+            background: Container(
+              color: Theme.of(context).primaryColor,
+              child: ListTile(
+                leading: Icon(Icons.delete, color: Colors.white),
+              ),
+            ),
+            child: ListTile(
+              leading: Icon(note.iconData),
+              title: Text(note.text),
+              trailing: Text('${note.timestamp.month} - ${note.timestamp.day}')
+            ),
+          );
+        }).toList(),
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
@@ -67,40 +105,6 @@ class NoteModel {
   final DateTime timestamp;
 }
 
-class NoteBookItem extends StatelessWidget {
-  NoteBookItem({@required this.icon, @required this.text, @required this.timestamp});
-
-  final Icon icon;
-  final String text;
-  final DateTime timestamp;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 50.0,
-      child: Row(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: icon,
-          ),
-          Expanded(
-            child: Text(text,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2
-            )
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text('${timestamp.month} - ${timestamp.day}'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-
 const List<IconData> ICONS = [Icons.star, Icons.favorite, Icons.fastfood, Icons.card_travel];
 
 
@@ -121,15 +125,23 @@ class _NoteEditDialogState extends State<NoteEditDialog> {
     textController = TextEditingController();
   }
 
+  GlobalKey<ScaffoldState> key = GlobalKey<ScaffoldState>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: key,
       appBar: AppBar(
         title: Text('Edit note'),
         actions: <Widget>[
           FlatButton(
             child: Text('Save'),
             onPressed: () {
+              if (textController.text.isEmpty) {
+                key.currentState.showSnackBar(SnackBar(content: Text('Empty notebook, please add some text')));
+                return;
+              }
+
               Navigator.pop(context, NoteModel(
                 iconData: currentIcon,
                 text: textController.text,

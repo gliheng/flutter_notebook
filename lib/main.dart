@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 
 void main() => runApp(new MyApp());
 
@@ -40,19 +41,23 @@ class _HomePageState extends State<HomePage> {
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () {
-          setState(() {
-            notes.add(NoteModel(
-              iconData: Icons.star,
-              text: 'Hello',
-              timestamp: DateTime.now())
-            );
-          });
+        onPressed: () async {
+          NoteModel ret = await Navigator.push(context, MaterialPageRoute<NoteModel>(
+            builder: (BuildContext context) => NoteEditDialog(),
+            fullscreenDialog: true,
+          ));
+
+          if (ret != null) {
+            setState(() {
+              notes.add(ret);
+            });
+          }
         }
       ),
     );
   }
 }
+
 
 class NoteModel {
   NoteModel({this.iconData, this.text, this.timestamp});
@@ -91,6 +96,84 @@ class NoteBookItem extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+
+const List<IconData> ICONS = [Icons.star, Icons.favorite, Icons.fastfood, Icons.card_travel];
+
+
+class NoteEditDialog extends StatefulWidget {
+  @override
+  _NoteEditDialogState createState() => _NoteEditDialogState();
+}
+
+class _NoteEditDialogState extends State<NoteEditDialog> {
+
+  IconData currentIcon;
+  TextEditingController textController;
+
+  @override
+  void initState() {
+    super.initState();
+    currentIcon = ICONS[0];
+    textController = TextEditingController();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Edit note'),
+        actions: <Widget>[
+          FlatButton(
+            child: Text('Save'),
+            onPressed: () {
+              Navigator.pop(context, NoteModel(
+                iconData: currentIcon,
+                text: textController.text,
+                timestamp: DateTime.now()
+              ));
+            },
+          )
+        ],
+      ),
+      body: Column(
+        children: <Widget>[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: ICONS.map((iconData) {
+              var color = Theme.of(context).iconTheme.color;
+              if (iconData == currentIcon) {
+                color = Theme.of(context).primaryColor;
+              }
+              return IconButton(
+                icon: Icon(iconData, color: color),
+                onPressed: () {
+                  setState(() {
+                    currentIcon = iconData;
+                  });
+                },
+              );
+            }).toList()
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: TextField(
+                autofocus: true,
+                decoration: new InputDecoration.collapsed(
+                  hintText: 'Note Message'
+                ),
+                keyboardType: TextInputType.multiline,
+                controller: textController,
+                maxLines: 1000,
+              ),
+            ),
+          )
+        ],
+      )
     );
   }
 }

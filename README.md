@@ -1,8 +1,7 @@
 # flutter_notebook
 
-A new Flutter application.
+A new Flutter tutorial for a notebook app.
 
-## Getting Started
+See branch part1-end, part2-end ... for the development process.
 
-For help getting started with Flutter, view our online
-[documentation](https://flutter.io/).
+Tutorial in Chinese is here: http://pyco.me/flutter-startup/
